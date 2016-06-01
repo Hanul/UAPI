@@ -304,14 +304,17 @@ RUN(function() {
 		parseBlock('self', bodyBlock, publicFuncInfos);
 		
 		markdown += '# ' + type + ' ' + name + '\n';
-		markdown += description + '\n';
+		
+		if (description !== undefined) {
+			markdown += description + '\n';
+		}
 		
 		markdown += '## Parameters' + '\n';
 		if (params.length === 0) {
 			markdown += 'No parameters.\n';
 		} else {
 			EACH(params, function(param) {
-				markdown += '* ' + (param.isRequired === true ? 'REQUIRED ' : 'OPTIONAL ') + param.name + ' ' + param.description + '\n';
+				markdown += '* ' + (param.isRequired === true ? 'REQUIRED ' : 'OPTIONAL ') + param.name + ' ' + (param.description === undefined ? '' : ' ' + param.description) + '\n';
 			});
 			markdown += '\n';
 		}
@@ -322,14 +325,17 @@ RUN(function() {
 		} else {
 			EACH(staticFuncInfos, function(staticFuncInfo) {
 				markdown += '### ' + staticFuncInfo.name + '\n';
-				markdown += staticFuncInfo.description + '\n';
 				
-				markdown += '##### Parameters' + '\n';
+				if (staticFuncInfo.description !== undefined) {
+					markdown += staticFuncInfo.description + '\n';
+				}
+				
+				markdown += '###### Parameters' + '\n';
 				if (staticFuncInfo.params.length === 0) {
 					markdown += 'No parameters.\n';
 				} else {
 					EACH(staticFuncInfo.params, function(param) {
-						markdown += '* ' + (param.isRequired === true ? 'REQUIRED ' : 'OPTIONAL ') + param.name + ' ' + param.description + '\n';
+						markdown += '* ' + (param.isRequired === true ? 'REQUIRED ' : 'OPTIONAL ') + param.name + ' ' + (param.description === undefined ? '' : ' ' + param.description) + '\n';
 					});
 					markdown += '\n';
 				}
@@ -342,14 +348,17 @@ RUN(function() {
 		} else {
 			EACH(publicFuncInfos, function(publicFuncInfo) {
 				markdown += '### ' + publicFuncInfo.name + '\n';
-				markdown += publicFuncInfo.description + '\n';
 				
-				markdown += '##### Parameters' + '\n';
+				if (publicFuncInfo.description !== undefined) {
+					markdown += publicFuncInfo.description + '\n';
+				}
+				
+				markdown += '###### Parameters' + '\n';
 				if (publicFuncInfo.params.length === 0) {
 					markdown += 'No parameters.\n';
 				} else {
 					EACH(publicFuncInfo.params, function(param) {
-						markdown += '* ' + (param.isRequired === true ? 'REQUIRED ' : 'OPTIONAL ') + param.name + ' ' + param.description + '\n';
+						markdown += '* ' + (param.isRequired === true ? 'REQUIRED ' : 'OPTIONAL ') + param.name + (param.description === undefined ? '' : ' ' + param.description) + '\n';
 					});
 					markdown += '\n';
 				}
@@ -358,7 +367,8 @@ RUN(function() {
 		
 		WRITE_FILE({
 			path : apiPath + path.substring(sourcePath.length, path.length - Path.extname(path).length) + '.md',
-			content : markdown
+			content : markdown,
+			isSync : true
 		});
 	});
 });

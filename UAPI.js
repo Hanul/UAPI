@@ -303,28 +303,27 @@ RUN(function() {
 		parseBlock(staticMemberName, staticBlock, staticFuncInfos);
 		parseBlock('self', bodyBlock, publicFuncInfos);
 		
-		markdown += '# ' + type + ' ' + name + '\n';
+		markdown += '# `' + type + '` ' + name + '\n';
 		
 		if (description !== undefined) {
 			markdown += description + '\n';
 		}
 		
-		markdown += '## Parameters' + '\n';
+		markdown += '\n## Parameters' + '\n';
 		if (params.length === 0) {
 			markdown += 'No parameters.\n';
 		} else {
 			EACH(params, function(param) {
-				markdown += '* ' + (param.isRequired === true ? 'REQUIRED ' : 'OPTIONAL ') + param.name + ' ' + (param.description === undefined ? '' : ' ' + param.description) + '\n';
+				markdown += '* ' + (param.isRequired === true ? '`REQUIRED` ' : '`OPTIONAL` ') + param.name + ' ' + (param.description === undefined ? '' : ' ' + param.description) + '\n';
 			});
-			markdown += '\n';
 		}
 		
-		markdown += '## Static Members' + '\n';
+		markdown += '\n## Static Members' + '\n';
 		if (staticFuncInfos.length === 0) {
 			markdown += 'No static members.\n';
 		} else {
 			EACH(staticFuncInfos, function(staticFuncInfo) {
-				markdown += '### ' + staticFuncInfo.name + '\n';
+				markdown += '\n### ' + staticFuncInfo.name + '\n';
 				
 				if (staticFuncInfo.description !== undefined) {
 					markdown += staticFuncInfo.description + '\n';
@@ -335,19 +334,18 @@ RUN(function() {
 					markdown += 'No parameters.\n';
 				} else {
 					EACH(staticFuncInfo.params, function(param) {
-						markdown += '* ' + (param.isRequired === true ? 'REQUIRED ' : 'OPTIONAL ') + param.name + ' ' + (param.description === undefined ? '' : ' ' + param.description) + '\n';
+						markdown += '* ' + (param.isRequired === true ? '`REQUIRED` ' : '`OPTIONAL` ') + param.name + ' ' + (param.description === undefined ? '' : ' ' + param.description) + '\n';
 					});
-					markdown += '\n';
 				}
 			});
 		}
 		
-		markdown += '## Public Members' + '\n';
+		markdown += '\n## Public Members' + '\n';
 		if (publicFuncInfos.length === 0) {
 			markdown += 'No public members.\n';
 		} else {
 			EACH(publicFuncInfos, function(publicFuncInfo) {
-				markdown += '### ' + publicFuncInfo.name + '\n';
+				markdown += '\n### ' + publicFuncInfo.name + '\n';
 				
 				if (publicFuncInfo.description !== undefined) {
 					markdown += publicFuncInfo.description + '\n';
@@ -358,9 +356,8 @@ RUN(function() {
 					markdown += 'No parameters.\n';
 				} else {
 					EACH(publicFuncInfo.params, function(param) {
-						markdown += '* ' + (param.isRequired === true ? 'REQUIRED ' : 'OPTIONAL ') + param.name + (param.description === undefined ? '' : ' ' + param.description) + '\n';
+						markdown += '* ' + (param.isRequired === true ? '`REQUIRED` ' : '`OPTIONAL` ') + param.name + (param.description === undefined ? '' : ' ' + param.description) + '\n';
 					});
-					markdown += '\n';
 				}
 			});
 		}

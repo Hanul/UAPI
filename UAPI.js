@@ -17,6 +17,9 @@ RUN(function() {
 	// api path
 	apiPath = process.argv[3],
 	
+	// except file names
+	exceptFileNames = process.argv.slice(4),
+	
 	// readme markdown
 	readmeMarkdown = '# API\n',
 	
@@ -30,9 +33,9 @@ RUN(function() {
 
 			// LIB module
 			name !== 'LIB' &&
-			
-			// BROWSER-FIX module
-			name !== 'BROWSER-FIX' &&
+
+			// R module
+			name !== 'R' &&
 
 			// node.js module
 			name !== 'node_modules' &&
@@ -44,7 +47,13 @@ RUN(function() {
 			name !== 'deprecated' &&
 
 			// _ folder
-			name[0] !== '_'
+			name[0] !== '_' &&
+			
+			// no except file name
+			CHECK_IS_IN({
+				array : exceptFileNames,
+				value : name
+			}) !== true
 		);
 	},
 	
@@ -68,8 +77,14 @@ RUN(function() {
 				},
 
 				success : function(fileNames) {
+					
 					EACH(fileNames, function(fileName) {
-						if (fileName[0] !== '_' && Path.extname(fileName) === '.js') {
+						
+						if (fileName[0] !== '_' && Path.extname(fileName) === '.js' && CHECK_IS_IN({
+							array : exceptFileNames,
+							value : fileName
+						}) !== true) {
+							
 							func(path + '/' + fileName);
 						}
 					});
@@ -247,6 +262,18 @@ RUN(function() {
 			});
 		};
 		
+		if (syntax.expression.callee !== undefined && (syntax.expression.callee.name === 'FOR_BOX' || syntax.expression.callee.name === 'OVERRIDE')) {
+			syntax = syntax.expression.arguments;
+			syntax = syntax[syntax.length - 1];
+			syntax = syntax.body.body[syntax.body.body.length - 1];
+		}
+		
+		if (syntax.expression.callee !== undefined && (syntax.expression.callee.name === 'FOR_BOX' || syntax.expression.callee.name === 'OVERRIDE')) {
+			syntax = syntax.expression.arguments;
+			syntax = syntax[syntax.length - 1];
+			syntax = syntax.body.body[syntax.body.body.length - 1];
+		}
+		
 		left = syntax.expression.left;
 		right = syntax.expression.right;
 		
@@ -258,7 +285,7 @@ RUN(function() {
 			if (description[0] === '*') {
 				description = description.substring(1);
 			}
-			description = description.replace(/\n \* /g, '\n').replace(/\n \*/g, '\n').trim();
+			description = description.replace(/\n[\t]* \* /g, '\n').replace(/\n[\t]* \*/g, '\n').trim();
 		}
 		
 		// if function

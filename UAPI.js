@@ -17,6 +17,9 @@ RUN(function() {
 	// api path
 	apiPath = process.argv[3],
 	
+	// readme markdown
+	readmeMarkdown = '# API\n',
+	
 	// check is allowed folder name.
 	checkIsAllowedFolderName = function(name) {
 		//REQUIRED: name
@@ -401,10 +404,18 @@ RUN(function() {
 			}
 		}
 		
+		readmeMarkdown += '* [' + path.substring(sourcePath.length + 1, path.length - Path.extname(path).length) + '.md](' + path.substring(sourcePath.length + 1, path.length - Path.extname(path).length) + '.md)\n';
+		
 		WRITE_FILE({
 			path : apiPath + path.substring(sourcePath.length, path.length - Path.extname(path).length) + '.md',
 			content : markdown,
 			isSync : true
 		});
+	});
+	
+	WRITE_FILE({
+		path : apiPath + '/README.md',
+		content : readmeMarkdown,
+		isSync : true
 	});
 });

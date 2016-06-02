@@ -25,6 +25,12 @@ RUN(function() {
 			// hide folder
 			name[0] !== '.' &&
 
+			// LIB module
+			name !== 'LIB' &&
+			
+			// BROWSER-FIX module
+			name !== 'BROWSER-FIX' &&
+
 			// node.js module
 			name !== 'node_modules' &&
 
@@ -60,7 +66,7 @@ RUN(function() {
 
 				success : function(fileNames) {
 					EACH(fileNames, function(fileName) {
-						if (Path.extname(fileName) === '.js') {
+						if (fileName[0] !== '_' && Path.extname(fileName) === '.js') {
 							func(path + '/' + fileName);
 						}
 					});
@@ -119,6 +125,9 @@ RUN(function() {
 		// type
 		type,
 		
+		// mom name
+		momName,
+		
 		// description
 		description,
 		
@@ -140,34 +149,41 @@ RUN(function() {
 		// parse params.
 		parseParams = function(params, body) {
 			
-			body = body.body.body[0];
+			if (body.body === undefined) {
+				body = body.arguments[0].body.body[0];
+			} else {
+				body = body.body.body[0];
+			}
 			
-			EACH(body.leadingComments !== undefined ? body.leadingComments : body.trailingComments, function(commentInfo) {
+			if (body !== undefined) {
 				
-				var
-				// comment
-				comment = commentInfo.value,
-				
-				// is required
-				isRequired,
-				
-				// index
-				index;
-				
-				if (comment.substring(0, 9) === 'REQUIRED:' || comment.substring(0, 9) === 'OPTIONAL:') {
+				EACH(body.leadingComments !== undefined ? body.leadingComments : body.trailingComments, function(commentInfo) {
 					
-					isRequired = comment.substring(0, 9) === 'REQUIRED:';
+					var
+					// comment
+					comment = commentInfo.value,
 					
-					comment = comment.substring(9).trim();
-					index = comment.indexOf(' ');
+					// is required
+					isRequired,
 					
-					params.push({
-						name : index === -1 ? comment : comment.substring(0, index),
-						isRequired : isRequired,
-						description : index === -1 ? undefined : comment.substring(index).trim()
-					});
-				}
-			});
+					// index
+					index;
+					
+					if (comment.substring(0, 9) === 'REQUIRED:' || comment.substring(0, 9) === 'OPTIONAL:') {
+						
+						isRequired = comment.substring(0, 9) === 'REQUIRED:';
+						
+						comment = comment.substring(9).trim();
+						index = comment.indexOf(' ');
+						
+						params.push({
+							name : index === -1 ? comment : comment.substring(0, index),
+							isRequired : isRequired,
+							description : index === -1 ? undefined : comment.substring(index).trim()
+						});
+					}
+				});
+			}
 		},
 		
 		// parse block.
@@ -213,13 +229,16 @@ RUN(function() {
 							}
 						});
 						
-						parseParams(params, body.expression.right.right);
-						
-						funcInfos.push({
-							name : name,
-							description : description,
-							params : params
-						});
+						if (body.expression.right.right !== undefined) {
+							
+							parseParams(params, body.expression.right.right);
+							
+							funcInfos.push({
+								name : name,
+								description : description,
+								params : params
+							});
+						}
 					}
 				}
 			});
@@ -236,7 +255,7 @@ RUN(function() {
 			if (description[0] === '*') {
 				description = description.substring(1);
 			}
-			description = description.replace(/\n \*/, '\n').trim();
+			description = description.replace(/\n \* /g, '\n').replace(/\n \*/g, '\n').trim();
 		}
 		
 		// if function
@@ -249,8 +268,12 @@ RUN(function() {
 			parseParams(params, right);
 		}
 		
+		else if (right.type === 'ObjectExpression' || right.type === 'Literal') {
+			type = 'data';
+		}
+		
 		else {
-				
+			
 			type = right.callee.name;
 		
 			// make params.
@@ -292,16 +315,21 @@ RUN(function() {
 							bodyBlock = property.value.body.body;
 							
 							parseParams(params, property.value);
+						}
+						
+						if ((type === 'CLASS' || type === 'OBJECT') && property.key.name === 'preset') {
 							
-							return false;
+							body = property.value.body.body;
+							body = body[body.length - 1];
+							
+							if (body.argument !== undefined) {
+								momName = source.substring(body.argument.range[0], body.argument.range[1]);
+							}
 						}
 					});
 				};
 			}]);
 		}
-		
-		parseBlock(staticMemberName, staticBlock, staticFuncInfos);
-		parseBlock('self', bodyBlock, publicFuncInfos);
 		
 		markdown += '# `' + type + '` ' + name + '\n';
 		
@@ -309,57 +337,68 @@ RUN(function() {
 			markdown += description + '\n';
 		}
 		
-		markdown += '\n## Parameters' + '\n';
-		if (params.length === 0) {
-			markdown += 'No parameters.\n';
-		} else {
-			EACH(params, function(param) {
-				markdown += '* ' + (param.isRequired === true ? '`REQUIRED` ' : '`OPTIONAL` ') + param.name + ' ' + (param.description === undefined ? '' : ' ' + param.description) + '\n';
-			});
-		}
-		
-		markdown += '\n## Static Members' + '\n';
-		if (staticFuncInfos.length === 0) {
-			markdown += 'No static members.\n';
-		} else {
-			EACH(staticFuncInfos, function(staticFuncInfo) {
-				markdown += '\n### ' + staticFuncInfo.name + '\n';
-				
-				if (staticFuncInfo.description !== undefined) {
-					markdown += staticFuncInfo.description + '\n';
-				}
-				
-				markdown += '###### Parameters' + '\n';
-				if (staticFuncInfo.params.length === 0) {
-					markdown += 'No parameters.\n';
-				} else {
-					EACH(staticFuncInfo.params, function(param) {
-						markdown += '* ' + (param.isRequired === true ? '`REQUIRED` ' : '`OPTIONAL` ') + param.name + ' ' + (param.description === undefined ? '' : ' ' + param.description) + '\n';
-					});
-				}
-			});
-		}
-		
-		markdown += '\n## Public Members' + '\n';
-		if (publicFuncInfos.length === 0) {
-			markdown += 'No public members.\n';
-		} else {
-			EACH(publicFuncInfos, function(publicFuncInfo) {
-				markdown += '\n### ' + publicFuncInfo.name + '\n';
-				
-				if (publicFuncInfo.description !== undefined) {
-					markdown += publicFuncInfo.description + '\n';
-				}
-				
-				markdown += '###### Parameters' + '\n';
-				if (publicFuncInfo.params.length === 0) {
-					markdown += 'No parameters.\n';
-				} else {
-					EACH(publicFuncInfo.params, function(param) {
-						markdown += '* ' + (param.isRequired === true ? '`REQUIRED` ' : '`OPTIONAL` ') + param.name + (param.description === undefined ? '' : ' ' + param.description) + '\n';
-					});
-				}
-			});
+		if (type !== 'data') {
+			
+			parseBlock(staticMemberName, staticBlock, staticFuncInfos);
+			parseBlock('self', bodyBlock, publicFuncInfos);
+			
+			if (momName !== undefined) {
+				markdown += '\n## Mom' + '\n';
+				markdown += momName + '\n';
+			}
+			
+			markdown += '\n## Parameters' + '\n';
+			if (params.length === 0) {
+				markdown += 'No parameters.\n';
+			} else {
+				EACH(params, function(param) {
+					markdown += '* ' + (param.isRequired === true ? '`REQUIRED` ' : '`OPTIONAL` ') + param.name + ' ' + (param.description === undefined ? '' : ' ' + param.description) + '\n';
+				});
+			}
+			
+			markdown += '\n## Static Members' + '\n';
+			if (staticFuncInfos.length === 0) {
+				markdown += 'No static members.\n';
+			} else {
+				EACH(staticFuncInfos, function(staticFuncInfo) {
+					markdown += '\n### ' + staticFuncInfo.name + '\n';
+					
+					if (staticFuncInfo.description !== undefined) {
+						markdown += staticFuncInfo.description + '\n';
+					}
+					
+					markdown += '###### Parameters' + '\n';
+					if (staticFuncInfo.params.length === 0) {
+						markdown += 'No parameters.\n';
+					} else {
+						EACH(staticFuncInfo.params, function(param) {
+							markdown += '* ' + (param.isRequired === true ? '`REQUIRED` ' : '`OPTIONAL` ') + param.name + ' ' + (param.description === undefined ? '' : ' ' + param.description) + '\n';
+						});
+					}
+				});
+			}
+			
+			markdown += '\n## Public Members' + '\n';
+			if (publicFuncInfos.length === 0) {
+				markdown += 'No public members.\n';
+			} else {
+				EACH(publicFuncInfos, function(publicFuncInfo) {
+					markdown += '\n### ' + publicFuncInfo.name + '\n';
+					
+					if (publicFuncInfo.description !== undefined) {
+						markdown += publicFuncInfo.description + '\n';
+					}
+					
+					markdown += '###### Parameters' + '\n';
+					if (publicFuncInfo.params.length === 0) {
+						markdown += 'No parameters.\n';
+					} else {
+						EACH(publicFuncInfo.params, function(param) {
+							markdown += '* ' + (param.isRequired === true ? '`REQUIRED` ' : '`OPTIONAL` ') + param.name + (param.description === undefined ? '' : ' ' + param.description) + '\n';
+						});
+					}
+				});
+			}
 		}
 		
 		WRITE_FILE({

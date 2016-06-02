@@ -3,7 +3,7 @@ UJS/UPPERCASE 기반 프로젝트의 API 문서를 생성합니다.
 
 ## 사용법
 ```
-node SkyAPI.js {{소스 폴더 경로}} {{API 문서들을 저장할 폴더 경로}}
+node UAPI.js {{소스 폴더 경로}} {{API 문서들을 저장할 폴더 경로}}
 ```
 
 ## 표현식
@@ -24,3 +24,9 @@ global.CONNECT_TO_WEB_SOCKET_SERVER = METHOD({
 		
 		...
 ```
+
+## 라이센스
+[MIT](LICENSE)
+
+## 작성자
+[Young Jae Sim](https://github.com/Hanul)

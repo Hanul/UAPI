@@ -1,0 +1,12 @@
+{
+  "name": "uppercase-api-generator",
+  "version": "1.0.0",
+  "dependencies": {
+    "commander": "latest",
+    "uppercase-core": "latest"
+  },
+  "main": "index.js",
+  "bin": {
+    "uapi": "./program.js"
+  }
+}

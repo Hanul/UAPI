@@ -1,9 +1,14 @@
-# UAPI
-UJS/UPPERCASE 기반 프로젝트의 API 문서를 생성합니다.
+# uapi
+UPPERCASE 기반 프로젝트의 API 문서를 생성합니다.
+
+## 설치방법
+```
+npm install uppercase-api-generator -g
+```
 
 ## 사용법
 ```
-node UAPI.js {{소스 폴더 경로}} {{API 문서들을 저장할 폴더 경로}} {{추가하지 않을 파일들 (선택)}}
+uapi {{소스 폴더 경로}} {{API 문서들을 저장할 폴더 경로}} {{추가하지 않을 파일들 (선택)}}
 ```
 
 ## 표현식

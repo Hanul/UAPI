@@ -51,11 +51,16 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 		
 		let syntax = result.body[0].body;
 		
+		let originName;
+		
 		if (result.start.value === 'FOR_BOX') {
 			result = result.body[0].body.args[0].body;
 			result = result[result.length - 1];
 			syntax = result.body;
 		} else if (result.start.value === 'OVERRIDE') {
+			
+			originName = result.body[0].body.args[0].name;
+			
 			result = result.body[0].body.args[1].body;
 			result = result[result.length - 1];
 			syntax = result.body;
@@ -66,6 +71,9 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 			result = result[result.length - 1];
 			syntax = result.body;
 		} else if (result.start.value === 'OVERRIDE') {
+			
+			originName = result.body.args[0].property;
+			
 			result = result.body.args[1].body;
 			result = result[result.length - 1];
 			syntax = result.body;
@@ -90,6 +98,10 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 			if (parentPathPrefix === undefined) {
 				
 				let name = source.substring(left.start.pos, left.end.endpos);
+				
+				if (name.indexOf('global.') === 0) {
+					name = name.substring(7);
+				}
 				
 				let parseParams = (params, definition, _comments) => {
 					
@@ -127,6 +139,7 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 				};
 				
 				let type;
+				let paramNames = [];
 				let params = [];
 				
 				let staticMemberName;
@@ -142,11 +155,22 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 					
 					bodyBlock = right.value;
 					
-					parseParams(params, right, syntax.end.comments_before);
+					if (right.argnames !== undefined) {
+						
+						EACH(right.argnames, (argname) => {
+							paramNames.push(argname.name);
+						});
+						
+						parseParams(params, right, syntax.end.comments_before);
+					}
 				}
 				
 				else if (right.start.type === 'punc') {
-					type = 'data';
+					type = 'DATA';
+				}
+				
+				else if (right.start.type === 'atom') {
+					type = 'var';
 				}
 				
 				else {
@@ -192,7 +216,14 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 									
 									bodyBlock = property.value.body;
 									
-									parseParams(params, property.value);
+									if (property.value.argnames !== undefined) {
+										
+										EACH(property.value.argnames, (argname) => {
+											paramNames.push(argname.name);
+										});
+									
+										parseParams(params, property.value);
+									}
 								}
 								
 								if ((type === 'CLASS' || type === 'OBJECT') && property.key === 'preset') {
@@ -220,36 +251,7 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 							
 							if (definition !== TO_DELETE && definition.start !== undefined && memberName === definition.start.value) {
 								
-								if (definition.left === undefined) {
-									
-									let name = definition.expression.property;
-									
-									let description;
-									
-									if (body.start.comments_before.length > 0) {
-										
-										description = '';
-										
-										EACH(body.start.comments_before, (comment, i) => {
-											
-											if (i > 0) {
-												description += '\n';
-											}
-											
-											description += comment.value.trim();
-										});
-									}
-									
-									let params = [];
-									
-									funcInfos.push({
-										name : name,
-										description : description,
-										params : params
-									});
-								}
-								
-								else {
+								if (definition.left !== undefined) {
 									
 									let name = definition.left.property;
 									
@@ -259,25 +261,39 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 										
 										description = '';
 										
-										EACH(body.start.comments_before, (comment, i) => {
-											
-											if (i > 0) {
-												description += '\n';
+										let beforeLines = 1;
+										
+										REVERSE_EACH(body.start.comments_before, (comment, i) => {
+										
+											if (body.start.line === comment.line + 1) {
+												
+												if (description !== '') {
+													description += '\n';
+												}
+												
+												description += comment.value.trim();
+												
+												beforeLines += 1;
 											}
-											
-											description += comment.value.trim();
 										});
 									}
 									
+									let paramNames = [];
 									let params = [];
 									
 									if (definition.right.argnames !== undefined) {
+										
+										EACH(definition.right.argnames, (argname) => {
+											paramNames.push(argname.name);
+										});
+										
 										parseParams(params, definition.right, definition.end.comments_before);
 									}
 									
 									funcInfos.push({
 										name : name,
 										description : description,
+										paramNames : paramNames,
 										params : params
 									});
 								}
@@ -288,7 +304,25 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 				
 				let markdown = '';
 				
-				markdown += '# `' + type + '` ' + name + '\n';
+				if (type === 'function' || type === 'METHOD' || type === 'CLASS' || type === 'OBJECT') {
+					
+					markdown += '# ' + (type !== 'function' ? type + ' ' : '') + '`' + name + '('
+					
+					if (paramNames.length > 0) {
+						EACH(paramNames, (paramName, i) => {
+							if (i > 0) {
+								markdown += ', ';
+							}
+							markdown += paramName;
+						});
+					}
+					
+					markdown += ')`\n';
+				}
+				
+				else {
+					markdown += '# `' + name + '`\n';
+				}
 				
 				if (description !== undefined) {
 					markdown += description + '\n';
@@ -306,37 +340,53 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 						parseBlock('self', bodyBlock, publicFuncInfos);
 						
 						if (momName !== undefined) {
-							markdown += '\n## Mom' + '\n';
-							markdown += momName + '\n';
+							markdown += '\n## Mom CLASS' + '\n';
+							if (originName !== undefined) {
+								markdown += '`' + originName + '`\n';
+							} else {
+								markdown += '`' + momName + '`\n';
+							}
 						}
 					}
 					
-					markdown += '\n## Parameters' + '\n';
-					if (params.length === 0) {
-						markdown += 'No parameters.\n';
-					} else {
+					if (params.length > 0) {
+						
+						markdown += '\n## Parameters' + '\n';
+						
 						EACH(params, (param) => {
-							markdown += '* ' + (param.isRequired === true ? '`REQUIRED` ' : '`OPTIONAL` ') + param.name + ' ' + (param.description === undefined ? '' : ' ' + param.description) + '\n';
+							markdown += '* ' + (param.isRequired === true ? '`REQUIRED`' : '`OPTIONAL`') + ' *' + param.name + '*' + (param.description === undefined ? '' : ' ' + param.description) + '\n';
 						});
 					}
 					
-					markdown += '\n## Static Members' + '\n';
-					if (staticFuncInfos.length === 0) {
-						markdown += 'No static members.\n';
-					} else {
+					if (staticFuncInfos.length > 0) {
+						
+						markdown += '\n## Static Members' + '\n';
+						
 						EACH(staticFuncInfos, (staticFuncInfo) => {
-							markdown += '\n### ' + staticFuncInfo.name + '\n';
+							
+							markdown += '\n### `' + staticFuncInfo.name + '('
+							
+							if (staticFuncInfo.paramNames.length > 0) {
+								EACH(staticFuncInfo.paramNames, (paramName, i) => {
+									if (i > 0) {
+										markdown += ', ';
+									}
+									markdown += paramName;
+								});
+							}
+							
+							markdown += ')`\n';
 							
 							if (staticFuncInfo.description !== undefined) {
 								markdown += staticFuncInfo.description + '\n';
 							}
 							
-							markdown += '#### Parameters' + '\n';
-							if (staticFuncInfo.params.length === 0) {
-								markdown += 'No parameters.\n';
-							} else {
+							if (staticFuncInfo.params.length > 0) {
+								
+								markdown += '#### Parameters' + '\n';
+								
 								EACH(staticFuncInfo.params, (param) => {
-									markdown += '* ' + (param.isRequired === true ? '`REQUIRED` ' : '`OPTIONAL` ') + param.name + ' ' + (param.description === undefined ? '' : ' ' + param.description) + '\n';
+									markdown += '* ' + (param.isRequired === true ? '`REQUIRED`' : '`OPTIONAL`') + ' *' + param.name + '*' + (param.description === undefined ? '' : ' ' + param.description) + '\n';
 								});
 							}
 						});
@@ -344,23 +394,36 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 					
 					if (type === 'CLASS' || type === 'OBJECT') {
 						
-						markdown += '\n## Public Members' + '\n';
-						if (publicFuncInfos.length === 0) {
-							markdown += 'No public members.\n';
-						} else {
+						
+						if (publicFuncInfos.length > 0) {
+							
+							markdown += '\n## Public Members' + '\n';
+							
 							EACH(publicFuncInfos, (publicFuncInfo) => {
-								markdown += '\n### ' + publicFuncInfo.name + '\n';
+								
+								markdown += '\n### `' + publicFuncInfo.name + '('
+								
+								if (publicFuncInfo.paramNames.length > 0) {
+									EACH(publicFuncInfo.paramNames, (paramName, i) => {
+										if (i > 0) {
+											markdown += ', ';
+										}
+										markdown += paramName;
+									});
+								}
+								
+								markdown += ')`\n';
 								
 								if (publicFuncInfo.description !== undefined) {
 									markdown += publicFuncInfo.description + '\n';
 								}
 								
-								markdown += '#### Parameters' + '\n';
-								if (publicFuncInfo.params.length === 0) {
-									markdown += 'No parameters.\n';
-								} else {
+								if (publicFuncInfo.params.length > 0) {
+									
+									markdown += '#### Parameters' + '\n';
+									
 									EACH(publicFuncInfo.params, (param) => {
-										markdown += '* ' + (param.isRequired === true ? '`REQUIRED` ' : '`OPTIONAL` ') + param.name + (param.description === undefined ? '' : ' ' + param.description) + '\n';
+										markdown += '* ' + (param.isRequired === true ? '`REQUIRED`' : '`OPTIONAL`') + ' *' + param.name + '*' + (param.description === undefined ? '' : ' ' + param.description) + '\n';
 									});
 								}
 							});
@@ -504,4 +567,6 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 	};
 	
 	scanFolder(sourcePath, apiPath);
+	
+	console.log(CONSOLE_GREEN('API 문서를 성공적으로 생성하였습니다.'));
 };

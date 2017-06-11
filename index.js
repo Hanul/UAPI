@@ -110,32 +110,35 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 					if (definition.body.length === 0) {
 						if (_comments !== undefined) {
 							comments = _comments;
-						} else {
+						} else if (definition.end !== undefined) {
 							comments = definition.end.comments_before;
 						}
 					} else {
 						comments = definition.body[0].start.comments_before;
 					}
 					
-					EACH(comments, (commentInfo) => {
+					if (comments !== undefined) {
 						
-						let comment = commentInfo.value;
-						
-						if (comment.substring(0, 9) === 'REQUIRED:' || comment.substring(0, 9) === 'OPTIONAL:') {
+						EACH(comments, (commentInfo) => {
 							
-							let isRequired = comment.substring(0, 9) === 'REQUIRED:';
+							let comment = commentInfo.value;
 							
-							comment = comment.substring(9).trim();
-							
-							let index = comment.indexOf(' ');
-							
-							params.push({
-								name : index === -1 ? comment : comment.substring(0, index),
-								isRequired : isRequired,
-								description : index === -1 ? undefined : comment.substring(index).trim()
-							});
-						}
-					});
+							if (comment.substring(0, 9) === 'REQUIRED:' || comment.substring(0, 9) === 'OPTIONAL:') {
+								
+								let isRequired = comment.substring(0, 9) === 'REQUIRED:';
+								
+								comment = comment.substring(9).trim();
+								
+								let index = comment.indexOf(' ');
+								
+								params.push({
+									name : index === -1 ? comment : comment.substring(0, index),
+									isRequired : isRequired,
+									description : index === -1 ? undefined : comment.substring(index).trim()
+								});
+							}
+						});
+					}
 				};
 				
 				let type;

@@ -309,18 +309,25 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 				
 				if (type === 'function' || type === 'METHOD' || type === 'CLASS' || type === 'OBJECT') {
 					
-					markdown += '# ' + (type !== 'function' ? type + ' ' : '') + '`' + name + '('
+					markdown += '# `' + (type !== 'function' ? type + ' ' : '') + '` ' + name.replace(/\(\'/g, '').replace(/\'\)/g, '');
 					
-					if (paramNames.length > 0) {
-						EACH(paramNames, (paramName, i) => {
-							if (i > 0) {
-								markdown += ', ';
-							}
-							markdown += paramName;
-						});
+					if (type === 'function') {
+						
+						markdown += '('
+						
+						if (paramNames.length > 0) {
+							EACH(paramNames, (paramName, i) => {
+								if (i > 0) {
+									markdown += ', ';
+								}
+								markdown += paramName;
+							});
+						}
+						
+						markdown += ')';
 					}
 					
-					markdown += ')`\n';
+					markdown += '\n';
 				}
 				
 				else {

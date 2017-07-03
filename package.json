@@ -1,6 +1,6 @@
 {
   "name": "uppercase-api-generator",
-  "version": "1.0.8",
+  "version": "1.0.10",
   "dependencies": {
     "commander": "latest",
     "uppercase-core": "latest"

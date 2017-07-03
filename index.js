@@ -129,7 +129,7 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 								
 								comment = comment.substring(9).trim();
 								
-								let index = comment.indexOf(' ');
+								let index = comment.indexOf(' ') !== -1 && comment.indexOf(' ') < comment.indexOf('\t') ? comment.indexOf(' ') : comment.indexOf('\t');
 								
 								params.push({
 									name : index === -1 ? comment : comment.substring(0, index),

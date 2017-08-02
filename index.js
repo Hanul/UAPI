@@ -161,6 +161,11 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 					if (right.argnames !== undefined) {
 						
 						EACH(right.argnames, (argname) => {
+							
+							if (argname.name[0] === '_') {
+								argname.name = argname.name.substring(1);
+							}
+							
 							paramNames.push(argname.name);
 						});
 						
@@ -222,6 +227,11 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 									if (property.value.argnames !== undefined) {
 										
 										EACH(property.value.argnames, (argname) => {
+											
+											if (argname.name[0] === '_') {
+												argname.name = argname.name.substring(1);
+											}
+											
 											paramNames.push(argname.name);
 										});
 									
@@ -287,6 +297,11 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 									if (definition.right.argnames !== undefined) {
 										
 										EACH(definition.right.argnames, (argname) => {
+											
+											if (argname.name[0] === '_') {
+												argname.name = argname.name.substring(1);
+											}
+											
 											paramNames.push(argname.name);
 										});
 										

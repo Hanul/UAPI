@@ -28,6 +28,10 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 			// deprecated files
 			name !== '__OLD' &&
 			
+			name !== 'R' &&
+			name !== 'LIB' &&
+			name !== 'POLYFILL' &&
+			
 			// no except file name
 			CHECK_IS_IN({
 				array : exceptFileNames,

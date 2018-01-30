@@ -13,9 +13,6 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 			// node.js module
 			name !== 'node_modules' &&
 			
-			// BOX folder
-			name !== 'BOX' &&
-			
 			// final resources
 			name !== '__RF' &&
 			

@@ -9,26 +9,24 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 		return (
 			// hide folder
 			name[0] !== '.' &&
-
-			// LIB module
-			name !== 'LIB' &&
 			
-			name !== 'POLYFILL' &&
-
-			// R module
-			name !== 'R' &&
-
 			// node.js module
 			name !== 'node_modules' &&
-
-			// not_load
-			name !== 'not_load' &&
-
-			// deprecated
-			name !== 'deprecated' &&
-
-			// _ folder
-			name[0] !== '_' &&
+			
+			// BOX folder
+			name !== 'BOX' &&
+			
+			// final resources
+			name !== '__RF' &&
+			
+			// packed files
+			name !== '__PACK' &&
+			
+			// not using files
+			name !== '__NOT_USING' &&
+			
+			// deprecated files
+			name !== '__OLD' &&
 			
 			// no except file name
 			CHECK_IS_IN({
@@ -79,7 +77,16 @@ module.exports = (sourcePath, apiPath, exceptFileNames) => {
 			syntax = result.body;
 		}
 		
-		let description = result.start.comments_before[0] === undefined ? undefined : result.start.comments_before[0].value;
+		let description;
+		
+		EACH(result.start.comments_before, (comment, i) => {
+			if (i === 0) {
+				description = '';
+			} else {
+				description += '\n';
+			}
+			description += comment.value.trim();
+		});
 		
 		if (description !== undefined) {
 			if (description[0] === '*') {
